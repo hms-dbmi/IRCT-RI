@@ -249,7 +249,7 @@ public class SciDBResourceImplementation implements
 			String queryId = sciDB.executeQuery(command, "dcsv");
 			if (queryId.contains("Exception")) {
 				result.setResultStatus(ResultStatus.ERROR);
-				result.setMessage(queryId);
+				result.setMessage(queryId.substring(0, queryId.indexOf("\n")));
 				sciDB.close();
 			} else {
 				result.setResourceActionId(sciDB.getSessionId() + "|" + queryId);
