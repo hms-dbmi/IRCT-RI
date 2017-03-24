@@ -54,9 +54,9 @@ import edu.harvard.hms.dbmi.bd2k.irct.model.resource.ResourceState;
 import edu.harvard.hms.dbmi.bd2k.irct.model.resource.implementation.PathResourceImplementationInterface;
 import edu.harvard.hms.dbmi.bd2k.irct.model.resource.implementation.ProcessResourceImplementationInterface;
 import edu.harvard.hms.dbmi.bd2k.irct.model.resource.implementation.QueryResourceImplementationInterface;
-import edu.harvard.hms.dbmi.bd2k.irct.model.result.Result;
-import edu.harvard.hms.dbmi.bd2k.irct.model.result.ResultDataType;
-import edu.harvard.hms.dbmi.bd2k.irct.model.result.ResultStatus;
+import edu.harvard.hms.dbmi.bd2k.irct.model.result.Job;
+import edu.harvard.hms.dbmi.bd2k.irct.model.result.JobDataType;
+import edu.harvard.hms.dbmi.bd2k.irct.model.result.JobStatus;
 import edu.harvard.hms.dbmi.bd2k.irct.model.result.exception.PersistableException;
 import edu.harvard.hms.dbmi.bd2k.irct.model.result.exception.ResultSetException;
 import edu.harvard.hms.dbmi.bd2k.irct.model.result.tabular.Column;
@@ -236,28 +236,28 @@ public class SciDBResourceImplementation implements
 	 * edu.harvard.hms.dbmi.bd2k.irct.model.result.Result)
 	 */
 	@Override
-	public Result runQuery(SecureSession session, Query query, Result result)
+	public Job runQuery(SecureSession session, Query query, Job result)
 			throws ResourceInterfaceException {
 		HttpClient client = createClient(session);
 		SciDB sciDB = new SciDB();
 		sciDB.connect(client, this.resourceURL);
-		result.setResultStatus(ResultStatus.CREATED);
+		result.setJobStatus(JobStatus.CREATED);
 
 		try {
 			SciDBCommand command = createQuery(sciDB, query);
 
 			String queryId = sciDB.executeQuery(command, "dcsv");
 			if (queryId.contains("Exception")) {
-				result.setResultStatus(ResultStatus.ERROR);
+				result.setJobStatus(JobStatus.ERROR);
 				result.setMessage(queryId.substring(0, queryId.indexOf("\n")));
 				sciDB.close();
 			} else {
 				result.setResourceActionId(sciDB.getSessionId() + "|" + queryId);
-				result.setResultStatus(ResultStatus.RUNNING);
+				result.setJobStatus(JobStatus.RUNNING);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			result.setResultStatus(ResultStatus.ERROR);
+			result.setJobStatus(JobStatus.ERROR);
 			result.setMessage(e.getMessage().split("\n")[0]);
 			sciDB.close();
 		}
@@ -500,10 +500,10 @@ public class SciDBResourceImplementation implements
 	 * edu.harvard.hms.dbmi.bd2k.irct.model.result.Result)
 	 */
 	@Override
-	public Result getResults(SecureSession session, Result result)
+	public Job getResults(SecureSession session, Job result)
 			throws ResourceInterfaceException {
-		if (result.getResultStatus() == ResultStatus.COMPLETE
-				|| result.getResultStatus() == ResultStatus.ERROR) {
+		if (result.getJobStatus() == JobStatus.COMPLETE
+				|| result.getJobStatus() == JobStatus.ERROR) {
 			return result;
 		}
 
@@ -543,18 +543,18 @@ public class SciDBResourceImplementation implements
 
 			result.setData(rs);
 
-			result.setResultStatus(ResultStatus.COMPLETE);
+			result.setJobStatus(JobStatus.COMPLETE);
 		} catch (NotConnectedException | IOException | ResultSetException
 				| PersistableException e) {
 			e.printStackTrace();
-			result.setResultStatus(ResultStatus.ERROR);
+			result.setJobStatus(JobStatus.ERROR);
 			result.setMessage(e.getMessage());
 		}
 		sciDB.close();
 		return result;
 	}
 
-	private FileResultSet createColumns(Result result, String headerLine)
+	private FileResultSet createColumns(Job result, String headerLine)
 			throws ResultSetException {
 		FileResultSet rs = (FileResultSet) result.getData();
 
@@ -579,8 +579,8 @@ public class SciDBResourceImplementation implements
 	 * edu.harvard.hms.dbmi.bd2k.irct.model.result.Result)
 	 */
 	@Override
-	public Result runProcess(SecureSession session, IRCTProcess process,
-			Result result) throws ResourceInterfaceException {
+	public Job runProcess(SecureSession session, IRCTProcess process,
+			Job result) throws ResourceInterfaceException {
 		HttpClient client = createClient(session);
 		SciDB sciDB = new SciDB();
 		sciDB.connect(client, this.resourceURL);
@@ -747,8 +747,8 @@ public class SciDBResourceImplementation implements
 	 * #getQueryDataType(edu.harvard.hms.dbmi.bd2k.irct.model.query.Query)
 	 */
 	@Override
-	public ResultDataType getQueryDataType(Query query) {
-		return ResultDataType.TABULAR;
+	public JobDataType getQueryDataType(Query query) {
+		return JobDataType.TABULAR;
 	}
 
 	/*
@@ -760,8 +760,8 @@ public class SciDBResourceImplementation implements
 	 * dbmi.bd2k.irct.model.process.IRCTProcess)
 	 */
 	@Override
-	public ResultDataType getProcessDataType(IRCTProcess process) {
-		return ResultDataType.TABULAR;
+	public JobDataType getProcessDataType(IRCTProcess process) {
+		return JobDataType.TABULAR;
 	}
 
 	/*

@@ -42,9 +42,9 @@ import edu.harvard.hms.dbmi.bd2k.irct.model.query.Query;
 import edu.harvard.hms.dbmi.bd2k.irct.model.query.SelectClause;
 import edu.harvard.hms.dbmi.bd2k.irct.model.resource.PrimitiveDataType;
 import edu.harvard.hms.dbmi.bd2k.irct.model.resource.ResourceState;
-import edu.harvard.hms.dbmi.bd2k.irct.model.result.Result;
-import edu.harvard.hms.dbmi.bd2k.irct.model.result.ResultDataType;
-import edu.harvard.hms.dbmi.bd2k.irct.model.result.ResultStatus;
+import edu.harvard.hms.dbmi.bd2k.irct.model.result.Job;
+import edu.harvard.hms.dbmi.bd2k.irct.model.result.JobDataType;
+import edu.harvard.hms.dbmi.bd2k.irct.model.result.JobStatus;
 import edu.harvard.hms.dbmi.bd2k.irct.model.result.exception.PersistableException;
 import edu.harvard.hms.dbmi.bd2k.irct.model.result.exception.ResultSetException;
 import edu.harvard.hms.dbmi.bd2k.irct.model.result.tabular.Column;
@@ -135,25 +135,25 @@ public class I2B2TranSMARTResourceImplementation extends
 	}
 
 	@Override
-	public Result runQuery(SecureSession session, Query query, Result result)
+	public Job runQuery(SecureSession session, Query query, Job result)
 			throws ResourceInterfaceException {
 		result = super.runQuery(session, query, result);
 
-		if (result.getResultStatus() != ResultStatus.ERROR) {
+		if (result.getJobStatus() != JobStatus.ERROR) {
 			String resultInstanceId = result.getResourceActionId();
 			String resultId = resultInstanceId.split("\\|")[2];
 			try {
 				// Wait for it to be either ready or fail
 				result = checkForResult(session, result);
-				while ((result.getResultStatus() != ResultStatus.ERROR)
-						&& (result.getResultStatus() != ResultStatus.COMPLETE)) {
+				while ((result.getJobStatus() != JobStatus.ERROR)
+						&& (result.getJobStatus() != JobStatus.COMPLETE)) {
 					Thread.sleep(3000);
 					result = checkForResult(session, result);
 				}
-				if (result.getResultStatus() == ResultStatus.ERROR) {
+				if (result.getJobStatus() == JobStatus.ERROR) {
 					return result;
 				}
-				result.setResultStatus(ResultStatus.RUNNING);
+				result.setJobStatus(JobStatus.RUNNING);
 
 				// Gather Select Clauses
 				Map<String, String> aliasMap = new HashMap<String, String>();
@@ -191,12 +191,12 @@ public class I2B2TranSMARTResourceImplementation extends
 				// Run Additional Queries and Create Result Set
 				result = runClinicalDataQuery(session, result, aliasMap,
 						resultId);
-				result.setResultStatus(ResultStatus.COMPLETE);
+				result.setJobStatus(JobStatus.COMPLETE);
 
 				// Set the status to complete
 			} catch (InterruptedException | UnsupportedOperationException
 					| IOException | ResultSetException | PersistableException e) {
-				result.setResultStatus(ResultStatus.ERROR);
+				result.setJobStatus(JobStatus.ERROR);
 				result.setMessage(e.getMessage());
 			}
 		}
@@ -236,7 +236,7 @@ public class I2B2TranSMARTResourceImplementation extends
 		return returns;
 	}
 
-	private Result runClinicalDataQuery(SecureSession session, Result result,
+	private Job runClinicalDataQuery(SecureSession session, Job result,
 			Map<String, String> aliasMap, String resultId)
 			throws ResultSetException, ClientProtocolException, IOException,
 			PersistableException {
@@ -348,7 +348,7 @@ public class I2B2TranSMARTResourceImplementation extends
 		return rs;
 	}
 
-	private ResultSet createInitialDataset(Result result,
+	private ResultSet createInitialDataset(Job result,
 			Map<String, String> aliasMap) throws ResultSetException {
 		ResultSet rs = (ResultSet) result.getData();
 
@@ -412,7 +412,7 @@ public class I2B2TranSMARTResourceImplementation extends
 	}
 
 	@Override
-	public Result getResults(SecureSession session, Result result)
+	public Job getResults(SecureSession session, Job result)
 			throws ResourceInterfaceException {
 		// This method only exists so the results for i2b2XML do not get called
 		return result;
@@ -424,8 +424,8 @@ public class I2B2TranSMARTResourceImplementation extends
 	}
 
 	@Override
-	public ResultDataType getQueryDataType(Query query) {
-		return ResultDataType.TABULAR;
+	public JobDataType getQueryDataType(Query query) {
+		return JobDataType.TABULAR;
 	}
 
 	@Override

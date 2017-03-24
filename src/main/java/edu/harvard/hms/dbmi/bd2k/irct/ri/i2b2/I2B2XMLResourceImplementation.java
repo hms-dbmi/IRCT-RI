@@ -51,9 +51,9 @@ import edu.harvard.hms.dbmi.bd2k.irct.model.resource.PrimitiveDataType;
 import edu.harvard.hms.dbmi.bd2k.irct.model.resource.ResourceState;
 import edu.harvard.hms.dbmi.bd2k.irct.model.resource.implementation.PathResourceImplementationInterface;
 import edu.harvard.hms.dbmi.bd2k.irct.model.resource.implementation.QueryResourceImplementationInterface;
-import edu.harvard.hms.dbmi.bd2k.irct.model.result.Result;
-import edu.harvard.hms.dbmi.bd2k.irct.model.result.ResultDataType;
-import edu.harvard.hms.dbmi.bd2k.irct.model.result.ResultStatus;
+import edu.harvard.hms.dbmi.bd2k.irct.model.result.Job;
+import edu.harvard.hms.dbmi.bd2k.irct.model.result.JobDataType;
+import edu.harvard.hms.dbmi.bd2k.irct.model.result.JobStatus;
 import edu.harvard.hms.dbmi.bd2k.irct.model.result.exception.PersistableException;
 import edu.harvard.hms.dbmi.bd2k.irct.model.result.exception.ResultSetException;
 import edu.harvard.hms.dbmi.bd2k.irct.model.result.tabular.Column;
@@ -385,11 +385,11 @@ public class I2B2XMLResourceImplementation implements
 	}
 
 	@Override
-	public Result runQuery(SecureSession session, Query query, Result result)
+	public Job runQuery(SecureSession session, Query query, Job result)
 			throws ResourceInterfaceException {
 		// Initial setup
 		HttpClient client = createClient(session);
-		result.setResultStatus(ResultStatus.CREATED);
+		result.setJobStatus(JobStatus.CREATED);
 		String projectId = "";
 
 		// Create the query
@@ -433,7 +433,7 @@ public class I2B2XMLResourceImplementation implements
 				panels.add(currentPanel);
 			}
 		} catch (DatatypeConfigurationException e) {
-			result.setResultStatus(ResultStatus.ERROR);
+			result.setJobStatus(JobStatus.ERROR);
 			result.setMessage(e.getMessage());
 		}
 
@@ -456,25 +456,25 @@ public class I2B2XMLResourceImplementation implements
 					.getQueryInstanceId();
 			result.setResourceActionId(projectId + "|" + queryId + "|"
 					+ resultId);
-			result.setResultStatus(ResultStatus.RUNNING);
+			result.setJobStatus(JobStatus.RUNNING);
 		} catch (JAXBException | IOException | I2B2InterfaceException e) {
-			result.setResultStatus(ResultStatus.ERROR);
+			result.setJobStatus(JobStatus.ERROR);
 			result.setMessage(e.getMessage());
 		}
 		return result;
 	}
 
 	@Override
-	public Result getResults(SecureSession session, Result result)
+	public Job getResults(SecureSession session, Job result)
 			throws ResourceInterfaceException {
 
 		try {
 			result = checkForResult(session, result);
 
-			if (result.getResultStatus() != ResultStatus.COMPLETE) {
+			if (result.getJobStatus() != JobStatus.COMPLETE) {
 				return result;
 			}
-			result.setResultStatus(ResultStatus.RUNNING);
+			result.setJobStatus(JobStatus.RUNNING);
 
 			HttpClient client = createClient(session);
 			String resultInstanceId = result.getResourceActionId();
@@ -486,11 +486,11 @@ public class I2B2XMLResourceImplementation implements
 					OutputOptionSelectType.USING_INPUT_LIST);
 
 			result = convertPatientSetToResultSet(pdrt, result);
-			result.setResultStatus(ResultStatus.COMPLETE);
+			result.setJobStatus(JobStatus.COMPLETE);
 		} catch (JAXBException | I2B2InterfaceException | IOException
 				| ResultSetException | PersistableException e) {
 			result.setMessage(e.getLocalizedMessage());
-			result.setResultStatus(ResultStatus.ERROR);
+			result.setJobStatus(JobStatus.ERROR);
 		}
 
 		return result;
@@ -505,7 +505,7 @@ public class I2B2XMLResourceImplementation implements
 	 *            Result
 	 * @return Result
 	 */
-	protected Result checkForResult(SecureSession session, Result result) {
+	protected Job checkForResult(SecureSession session, Job result) {
 		HttpClient client = createClient(session);
 
 		String resultInstanceId = result.getResourceActionId();
@@ -525,11 +525,11 @@ public class I2B2XMLResourceImplementation implements
 
 			switch (instanceResultStatusType) {
 			case "RUNNING":
-				result.setResultStatus(ResultStatus.RUNNING);
+				result.setJobStatus(JobStatus.RUNNING);
 				return result;
 			case "ERROR":
 			case "INCOMPLETE":
-				result.setResultStatus(ResultStatus.ERROR);
+				result.setJobStatus(JobStatus.ERROR);
 				result.setMessage(instanceResultStatusType);
 				return result;
 			}
@@ -544,16 +544,16 @@ public class I2B2XMLResourceImplementation implements
 					.getQueryStatusType().getName();
 			switch (queryResultInstanceStatusType) {
 			case "RUNNING":
-				result.setResultStatus(ResultStatus.RUNNING);
+				result.setJobStatus(JobStatus.RUNNING);
 				return result;
 			case "ERROR":
-				result.setResultStatus(ResultStatus.ERROR);
+				result.setJobStatus(JobStatus.ERROR);
 				return result;
 			}
-			result.setResultStatus(ResultStatus.COMPLETE);
+			result.setJobStatus(JobStatus.COMPLETE);
 		} catch (JAXBException | I2B2InterfaceException | IOException e) {
 			result.setMessage(e.getLocalizedMessage());
-			result.setResultStatus(ResultStatus.ERROR);
+			result.setJobStatus(JobStatus.ERROR);
 		}
 
 		return result;
@@ -566,8 +566,8 @@ public class I2B2XMLResourceImplementation implements
 	}
 
 	@Override
-	public ResultDataType getQueryDataType(Query query) {
-		return ResultDataType.TABULAR;
+	public JobDataType getQueryDataType(Query query) {
+		return JobDataType.TABULAR;
 	}
 
 	// -------------------------------------------------------------------------
@@ -673,8 +673,8 @@ public class I2B2XMLResourceImplementation implements
 		return myPath;
 	}
 
-	private Result convertPatientSetToResultSet(
-			PatientDataResponseType patientDataResponse, Result result)
+	private Job convertPatientSetToResultSet(
+			PatientDataResponseType patientDataResponse, Job result)
 			throws ResultSetException, PersistableException {
 		PatientSet patientSet = patientDataResponse.getPatientData()
 				.getPatientSet();

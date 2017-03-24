@@ -24,9 +24,9 @@ import edu.harvard.hms.dbmi.bd2k.irct.model.resource.PrimitiveDataType;
 import edu.harvard.hms.dbmi.bd2k.irct.model.resource.ResourceState;
 import edu.harvard.hms.dbmi.bd2k.irct.model.resource.implementation.PathResourceImplementationInterface;
 import edu.harvard.hms.dbmi.bd2k.irct.model.resource.implementation.QueryResourceImplementationInterface;
-import edu.harvard.hms.dbmi.bd2k.irct.model.result.Result;
-import edu.harvard.hms.dbmi.bd2k.irct.model.result.ResultDataType;
-import edu.harvard.hms.dbmi.bd2k.irct.model.result.ResultStatus;
+import edu.harvard.hms.dbmi.bd2k.irct.model.result.Job;
+import edu.harvard.hms.dbmi.bd2k.irct.model.result.JobDataType;
+import edu.harvard.hms.dbmi.bd2k.irct.model.result.JobStatus;
 import edu.harvard.hms.dbmi.bd2k.irct.model.result.exception.ResultSetException;
 import edu.harvard.hms.dbmi.bd2k.irct.model.result.tabular.Column;
 import edu.harvard.hms.dbmi.bd2k.irct.model.result.tabular.ResultSet;
@@ -85,7 +85,7 @@ public class FileServiceResourceImplementation implements
 	}
 
 	@Override
-	public Result runQuery(SecureSession session, Query qep, Result result)
+	public Job runQuery(SecureSession session, Query qep, Job result)
 			throws ResourceInterfaceException {
 		WhereClause wc = (WhereClause) qep.getClauses().get(0L);
 
@@ -114,9 +114,9 @@ public class FileServiceResourceImplementation implements
 			in.close();
 			
 			result.setData(rs);
-			result.setResultStatus(ResultStatus.COMPLETE);
+			result.setJobStatus(JobStatus.COMPLETE);
 		} catch (Exception e) {
-			result.setResultStatus(ResultStatus.ERROR);
+			result.setJobStatus(JobStatus.ERROR);
 			result.setMessage(e.getMessage());
 			e.printStackTrace();
 		}
@@ -126,7 +126,7 @@ public class FileServiceResourceImplementation implements
 	
 	
 
-	private ResultSet createInitialDataset(Result result, Set<String> headers) throws ResultSetException {
+	private ResultSet createInitialDataset(Job result, Set<String> headers) throws ResultSetException {
 		ResultSet rs = (ResultSet) result.getData();
 		for(String header : headers) {
 			Column encounterColumn = new Column();
@@ -138,7 +138,7 @@ public class FileServiceResourceImplementation implements
 	}
 
 	@Override
-	public Result getResults(SecureSession session, Result result)
+	public Job getResults(SecureSession session, Job result)
 			throws ResourceInterfaceException {
 		return result;
 	}
@@ -162,8 +162,8 @@ public class FileServiceResourceImplementation implements
 	}
 
 	@Override
-	public ResultDataType getQueryDataType(Query query) {
-		return ResultDataType.TABULAR;
+	public JobDataType getQueryDataType(Query query) {
+		return JobDataType.TABULAR;
 	}
 
 }

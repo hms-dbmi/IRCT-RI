@@ -38,9 +38,9 @@ import edu.harvard.hms.dbmi.bd2k.irct.model.resource.ResourceState;
 import edu.harvard.hms.dbmi.bd2k.irct.model.resource.implementation.PathResourceImplementationInterface;
 import edu.harvard.hms.dbmi.bd2k.irct.model.resource.implementation.ProcessResourceImplementationInterface;
 import edu.harvard.hms.dbmi.bd2k.irct.model.resource.implementation.QueryResourceImplementationInterface;
-import edu.harvard.hms.dbmi.bd2k.irct.model.result.Result;
-import edu.harvard.hms.dbmi.bd2k.irct.model.result.ResultDataType;
-import edu.harvard.hms.dbmi.bd2k.irct.model.result.ResultStatus;
+import edu.harvard.hms.dbmi.bd2k.irct.model.result.Job;
+import edu.harvard.hms.dbmi.bd2k.irct.model.result.JobDataType;
+import edu.harvard.hms.dbmi.bd2k.irct.model.result.JobStatus;
 import edu.harvard.hms.dbmi.bd2k.irct.model.result.exception.PersistableException;
 import edu.harvard.hms.dbmi.bd2k.irct.model.result.exception.ResultSetException;
 import edu.harvard.hms.dbmi.bd2k.irct.model.result.tabular.Column;
@@ -152,22 +152,22 @@ public class EXACResourceImplementation implements
 	}
 
 	@Override
-	public Result runQuery(SecureSession session, Query qep, Result result)
+	public Job runQuery(SecureSession session, Query qep, Job result)
 			throws ResourceInterfaceException {
 		// TODO Auto-generated method stub
 		HttpClient client = createClient(session);
-		result.setResultStatus(ResultStatus.CREATED);
+		result.setJobStatus(JobStatus.CREATED);
 
 		// Check Clause
 		if (qep.getClauses().size() != 1) {
-			result.setResultStatus(ResultStatus.ERROR);
+			result.setJobStatus(JobStatus.ERROR);
 			result.setMessage("Wrong number of clauses");
 			return result;
 		}
 		ClauseAbstract clause = qep.getClauses().values().iterator().next();
 
 		if (!(clause instanceof WhereClause)) {
-			result.setResultStatus(ResultStatus.ERROR);
+			result.setJobStatus(JobStatus.ERROR);
 			result.setMessage("Clause is not a where Clause");
 			return result;
 		}
@@ -214,7 +214,7 @@ public class EXACResourceImplementation implements
 		}
 		// Run Query
 		if (urlString == null) {
-			result.setResultStatus(ResultStatus.ERROR);
+			result.setJobStatus(JobStatus.ERROR);
 			result.setMessage("Unknown predicate");
 			return result;
 		}
@@ -233,9 +233,9 @@ public class EXACResourceImplementation implements
 						result);
 			}
 			reader.close();
-			result.setResultStatus(ResultStatus.COMPLETE);
+			result.setJobStatus(JobStatus.COMPLETE);
 		} catch (IOException e) {
-			result.setResultStatus(ResultStatus.ERROR);
+			result.setJobStatus(JobStatus.ERROR);
 			result.setMessage(e.getMessage());
 		}
 
@@ -245,8 +245,8 @@ public class EXACResourceImplementation implements
 	}
 
 	@Override
-	public Result runProcess(SecureSession session, IRCTProcess process,
-			Result result) throws ResourceInterfaceException {
+	public Job runProcess(SecureSession session, IRCTProcess process,
+			Job result) throws ResourceInterfaceException {
 		HttpClient client = createClient(session);
 		try {
 			ResultSet resultSetField = (ResultSet) process.getObjectValues()
@@ -314,16 +314,16 @@ public class EXACResourceImplementation implements
 				}
 				
 				result.setData(rs);
-				result.setResultStatus(ResultStatus.COMPLETE);
+				result.setJobStatus(JobStatus.COMPLETE);
 			} catch (IOException | PersistableException e) {
 				e.printStackTrace();
-				result.setResultStatus(ResultStatus.ERROR);
+				result.setJobStatus(JobStatus.ERROR);
 				result.setMessage(e.getMessage());
 			}
 
 		} catch (ResultSetException e) {
 			e.printStackTrace();
-			result.setResultStatus(ResultStatus.ERROR);
+			result.setJobStatus(JobStatus.ERROR);
 			result.setMessage(e.getMessage());
 		}
 
@@ -341,7 +341,7 @@ public class EXACResourceImplementation implements
 	
 	
 
-	private ResultSet createResultSet(Result result, ResultSet resultSetField) throws ResultSetException {
+	private ResultSet createResultSet(Job result, ResultSet resultSetField) throws ResultSetException {
 		ResultSet rs = (ResultSet) result.getData();
 		
 		for(Column column : resultSetField.getColumns()) {
@@ -359,10 +359,10 @@ public class EXACResourceImplementation implements
 	}
 
 	@Override
-	public Result getResults(SecureSession session, Result result)
+	public Job getResults(SecureSession session, Job result)
 			throws ResourceInterfaceException {
-		if (result.getResultStatus() != ResultStatus.COMPLETE) {
-			result.setResultStatus(ResultStatus.ERROR);
+		if (result.getJobStatus() != JobStatus.COMPLETE) {
+			result.setJobStatus(JobStatus.ERROR);
 		}
 		return result;
 	}
@@ -385,7 +385,7 @@ public class EXACResourceImplementation implements
 	}
 
 	@Override
-	public ResultDataType getQueryDataType(Query query) {
+	public JobDataType getQueryDataType(Query query) {
 		// Check Clause
 		if (query.getClauses().size() != 1) {
 			return null;
@@ -401,25 +401,25 @@ public class EXACResourceImplementation implements
 				.getPui());
 
 		if (resourcePath.split("/").length >= 2) {
-			return ResultDataType.TABULAR;
+			return JobDataType.TABULAR;
 		}
 
-		return ResultDataType.JSON;
+		return JobDataType.JSON;
 	}
 
 	@Override
-	public ResultDataType getProcessDataType(IRCTProcess pep) {
-		return ResultDataType.TABULAR;
+	public JobDataType getProcessDataType(IRCTProcess pep) {
+		return JobDataType.TABULAR;
 	}
 
-	private Result convertJsonObjectToResultSet(JsonObject exacJSONResults,
-			Result result) {
+	private Job convertJsonObjectToResultSet(JsonObject exacJSONResults,
+			Job result) {
 		// TODO: BUILD OUT
 		return result;
 	}
 
-	private Result convertJsonArrayToResultSet(JsonArray exacJSONResults,
-			Result result) {
+	private Job convertJsonArrayToResultSet(JsonArray exacJSONResults,
+			Job result) {
 
 		FileResultSet mrs = (FileResultSet) result.getData();
 		try {
