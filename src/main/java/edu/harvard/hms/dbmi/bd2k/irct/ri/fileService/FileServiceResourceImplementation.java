@@ -85,22 +85,22 @@ public class FileServiceResourceImplementation implements
 	}
 
 	@Override
-	public Job runQuery(SecureSession session, Query qep, Job result)
+	public Job runQuery(SecureSession session, Query query, Job job)
 			throws ResourceInterfaceException {
-		WhereClause wc = (WhereClause) qep.getClauses().get(0L);
+		WhereClause wc = query.getClausesOfType(WhereClause.class).get(0);
 
 		String[] pathComponents = wc.getField().getPui().split("/");
 		String fileName = pathComponents[2];
 		
 		try {
-			ResultSet rs = (ResultSet) result.getData();
+			ResultSet rs = (ResultSet) job.getData();
 			
 			
 			Reader in = new FileReader(this.baseDir + "/" + fileName);
 			
 		    CSVParser parser = new CSVParser(in, CSVFormat.EXCEL.withHeader());
 		    
-		    rs = createInitialDataset(result, parser.getHeaderMap().keySet());
+		    rs = createInitialDataset(job, parser.getHeaderMap().keySet());
 			
 			for (CSVRecord record : parser) {
 				
@@ -113,15 +113,15 @@ public class FileServiceResourceImplementation implements
 			parser.close();
 			in.close();
 			
-			result.setData(rs);
-			result.setJobStatus(JobStatus.COMPLETE);
+			job.setData(rs);
+			job.setJobStatus(JobStatus.COMPLETE);
 		} catch (Exception e) {
-			result.setJobStatus(JobStatus.ERROR);
-			result.setMessage(e.getMessage());
+			job.setJobStatus(JobStatus.ERROR);
+			job.setMessage(e.getMessage());
 			e.printStackTrace();
 		}
 		
-		return result;
+		return job;
 	}
 	
 	
